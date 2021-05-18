@@ -1,1 +1,1 @@
-# DocSummarizer
+# DocumentSummarizer
