@@ -47,10 +47,23 @@ class LSA_Summarizer:
     def murray_renals_carletta(self, num_sentences):
         V = self.build_matrix()
         S, Vt = np.linalg.svd(V)[1:]
-        rating_vec = np.dot(np.square(S), np.square(Vt))
-        best_sentences = rating_vec.argsort()[-num_sentences:][::-1]
-        best_sentences.sort()
-        return best_sentences
+        count_vec = np.ceil([num_sentences*(k/sum(S)) for k in S])
+        selected_sent = []
+        count_idx = 0
+        while len(selected_sent) < num_sentences:
+            if count_vec[count_idx] > 0:
+                idx = np.argmax(Vt[count_idx])
+                if idx not in selected_sent:
+                    selected_sent.append(idx)
+                    count_vec[count_idx] -= 1
+                else:
+                    Vt[count_idx][idx] = min(Vt[count_idx])
+                pass
+            else:
+                count_idx += 1 
+        
+        selected_sent.sort()
+        return selected_sent
 
     def summarize(self, text, length, method=1):
         self.text = text
