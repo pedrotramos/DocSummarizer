@@ -30,13 +30,23 @@ class LSA_Summarizer:
                 mat[wi, si] += 1
         return mat
 
-    def steinberger_jezek(self, num_sentences):
-        V = self.build_matrix()
-        S = np.linalg.svd(V)[1]
+    def steinberger_jezek(self, num_sentences, num_dimensions):
+        A = self.build_matrix()
+        S, Vt = np.linalg.svd(A)[1:]
+        V = Vt.transpose()
+        if num_dimensions != None:
+            if num_dimensions > len(self.sentences):
+                raise Exception(
+                    "O número de dimensões não pode ser maior do que o número de frases original."
+                )
+            else:
+                dim = num_dimensions
+        else:
+            dim = len(self.sentences)
         rating_vec = np.zeros(shape=(S.shape))
-        for i in range(V.shape[1]):
+        for i in range(V.shape[0]):
             length = 0
-            for j in range(V.shape[0]):
+            for j in range(dim):
                 length += V[j][i] ** 2
             rating_vec
             rating_vec[i] = (length * S[i] ** 2) ** (1 / 2)
@@ -47,7 +57,7 @@ class LSA_Summarizer:
     def murray_renals_carletta(self, num_sentences):
         V = self.build_matrix()
         S, Vt = np.linalg.svd(V)[1:]
-        count_vec = np.ceil([num_sentences*(k/sum(S)) for k in S])
+        count_vec = np.ceil([num_sentences * (k / sum(S)) for k in S])
         selected_sent = []
         count_idx = 0
         while len(selected_sent) < num_sentences:
@@ -60,16 +70,16 @@ class LSA_Summarizer:
                     Vt[count_idx][idx] = min(Vt[count_idx])
                 pass
             else:
-                count_idx += 1 
-        
+                count_idx += 1
+
         selected_sent.sort()
         return selected_sent
 
-    def summarize(self, text, length, method=1):
+    def summarize(self, text, length, dim, method):
         self.text = text
         self.length = length
         if method == 1:
-            best_sentences = self.steinberger_jezek(self.length)
+            best_sentences = self.steinberger_jezek(self.length, dim)
         else:
             best_sentences = self.murray_renals_carletta(self.length)
         summary_sentences = [self.sentences[i] for i in best_sentences]
@@ -107,6 +117,17 @@ if __name__ == "__main__":
     )
     print("")
 
+    dim = None
+    if method == 1:
+        dim = input(
+            "Digite o número de dimensões desejado [Apenas ENTER para o número padrão]: "
+        )
+        try:
+            dim = int(dim)
+        except:
+            dim = None
+        print("")
+
     summarizer = LSA_Summarizer()
-    summary = summarizer.summarize(text, num_sentences, method)
+    summary = summarizer.summarize(text, num_sentences, dim, method)
     print(summary)
